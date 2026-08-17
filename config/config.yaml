@@ -1,0 +1,25 @@
+# ─────────────────────────────────────────────────────────
+# Gravity Simulator Configuration
+# ─────────────────────────────────────────────────────────
+
+physics:
+  gravity: 980.0            # px/s²  (≈ 9.8 m/s² × 100 pixel scale)
+  dt: 0.01667               # seconds per tick  (≈ 60 fps)
+  restitution: 0.4          # bounce coefficient  (0 = dead stop, 1 = perfect bounce)
+  air_resistance: 0.999     # velocity decay per tick in air  (1.0 = vacuum, 0.99 = light drag)
+  ground_friction: 0.3      # horizontal friction on ground contact  (0 = ice, 1 = glue)
+  angular_damping: 0.98     # spin decay per tick  (1.0 = no damping)
+  integration: "verlet"     # "euler" or "verlet"
+
+
+ground:
+  offset: 50                # pixels up from canvas bottom edge
+
+canvas:
+  width: 800
+  height: 600
+
+BE:
+  host: "0.0.0.0"
+  port: 8000
+  reload: true

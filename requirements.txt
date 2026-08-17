@@ -1,0 +1,6 @@
+fastapi>=0.104
+uvicorn>=0.24
+pydantic>=2.5
+numpy>=2.0
+opencv-python>=5.0
+PyYAML>=6.0

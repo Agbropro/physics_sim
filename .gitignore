@@ -1,0 +1,25 @@
+# Environment and Agent
+.env
+.venv
+env/
+venv/
+__pycache__/
+*.pyc
+agent/
+.gemini/
+
+# Frontend (Node / Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/.env*
+!frontend/.env.example
+
+# IDEs and OS
+.vscode/
+.idea/
+.DS_Store
+
+# Build and Logs
+*.log
+coverage/
+.pytest_cache/
