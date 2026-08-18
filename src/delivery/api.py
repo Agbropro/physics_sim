@@ -25,7 +25,18 @@ from src.physics.entities import (
 from src.physics.gravity.gravity import create_body, step
 
 
+import yaml
+from pathlib import Path
+
 LOGGER = logging.getLogger(__name__)
+
+config_path = Path(__file__).parent.parent.parent / "config" / "config.yaml"
+try:
+    with open(config_path) as f:
+        _config = yaml.safe_load(f)
+    cors_origins = _config.get("CORS", {}).get("origins", ["http://localhost:5173", "http://127.0.0.1:5173"])
+except Exception:
+    cors_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
 app = FastAPI(
     title="Physics Simulator API",
@@ -33,9 +44,10 @@ app = FastAPI(
     description="2D center-of-mass and gravity simulation for drawn shapes.",
 )
 
+# Add dynamically loaded CORS origins, and include wildcard for local network sharing
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=cors_origins + ["*"],  # Fallback wildcard to allow local network testing
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )

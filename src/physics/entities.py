@@ -155,6 +155,7 @@ class PhysicsConfig(BaseModel):
     air_resistance: float = Field(ge=0, le=1, description="velocity decay per tick in air")
     ground_friction: float = Field(ge=0, le=1, description="horizontal friction on ground")
     angular_damping: float = Field(ge=0, le=1, description="spin decay per tick")
+    contact_tolerance: float = Field(default=0.5, ge=0, description="px tolerance for flat surface hits")
     integration: IntegrationMode = IntegrationMode.VERLET
 
 
@@ -236,6 +237,7 @@ class SimulateRequest(BaseModel):
     air_resistance: float = Field(default=0.999, ge=0, le=1)
     ground_friction: float = Field(default=0.3, ge=0, le=1)
     angular_damping: float = Field(default=0.98, ge=0, le=1)
+    contact_tolerance: float = Field(default=3.0, ge=0)
     ground_offset: float = Field(default=50.0, ge=0)
     integration: IntegrationMode = IntegrationMode.VERLET
     max_frames: int = Field(default=600, gt=0, le=3600)
@@ -244,12 +246,13 @@ class SimulateRequest(BaseModel):
         """Convert flat request fields into a nested SimConfig."""
         return SimConfig(
             physics=PhysicsConfig(
-                gravity=self.gravity,
+                gravity=self.gravity * 100.0,
                 dt=self.dt,
                 restitution=self.restitution,
                 air_resistance=self.air_resistance,
                 ground_friction=self.ground_friction,
                 angular_damping=self.angular_damping,
+                contact_tolerance=self.contact_tolerance,
                 integration=self.integration,
             ),
             ground=GroundConfig(offset=self.ground_offset),

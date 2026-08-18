@@ -47,14 +47,14 @@ export default function ControlPanel({
       <fieldset>
         <legend>Shape</legend>
         <div className="shape-buttons">
-          {(['rectangle', 'circle', 'polygon', 'edit'] as const).map((k) => (
+          {(['rectangle', 'circle', 'polygon', 'free', 'edit'] as const).map((k) => (
             <button
               key={k}
               className={activeTool === k ? 'active' : ''}
               onClick={() => onToolChange(k)}
               disabled={isSimulating}
             >
-              {k === 'rectangle' ? '▭ Rect' : k === 'circle' ? '⬤ Circ' : k === 'polygon' ? '⬟ Poly' : '✋ Edit'}
+              {k === 'rectangle' ? '▭ Rect' : k === 'circle' ? '⬤ Circ' : k === 'polygon' ? '⬟ Poly' : k === 'free' ? '✏️ Free' : '✋ Edit'}
             </button>
           ))}
         </div>
@@ -65,9 +65,9 @@ export default function ControlPanel({
         <legend>Physics</legend>
 
         <label>
-          Gravity (px/s²)
+          Gravity (m/s²)
           <input
-            type="range" min="100" max="3000" step="10"
+            type="range" min="1" max="100" step="0.1"
             value={settings.gravity}
             onChange={(e) => set('gravity', +e.target.value)}
           />
@@ -208,8 +208,8 @@ export default function ControlPanel({
             </div>
             <div className="help-modal-body">
               <div className="help-item">
-                <div className="help-label">Gravity <span className="range-hint">[100 - 3000]</span></div>
-                <div className="help-desc">How fast objects accelerate downwards (pixels per second squared). Higher values mean stronger gravity.</div>
+                <div className="help-label"><span>Gravity</span> <span className="range-hint">[1.0 - 100.0]</span></div>
+                <div className="help-desc">Downward acceleration (m/s²). Earth is 9.8.</div>
               </div>
               <div className="help-item">
                 <div className="help-label">Restitution <span className="range-hint">[0.0 - 1.0]</span></div>

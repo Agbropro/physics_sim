@@ -2,7 +2,7 @@
 
 export type Point = [number, number];
 
-export type ShapeKind = 'rectangle' | 'circle' | 'polygon';
+export type ShapeKind = 'rectangle' | 'circle' | 'polygon' | 'free';
 
 export type IntegrationMode = 'euler' | 'verlet';
 
@@ -120,7 +120,7 @@ export interface SimSettings {
 }
 
 export const DEFAULT_SETTINGS: SimSettings = {
-  gravity: 980,
+  gravity: 9.8,
   dt: 0.01667,
   restitution: 0.4,
   airResistance: 0.999,

@@ -9,6 +9,7 @@ physics:
   air_resistance: 0.999     # velocity decay per tick in air  (1.0 = vacuum, 0.99 = light drag)
   ground_friction: 0.3      # horizontal friction on ground contact  (0 = ice, 1 = glue)
   angular_damping: 0.98     # spin decay per tick  (1.0 = no damping)
+  contact_tolerance: 3.0    # flat surface jitter threshold (px)
   integration: "verlet"     # "euler" or "verlet"
 
 
@@ -23,3 +24,9 @@ BE:
   host: "0.0.0.0"
   port: 8000
   reload: true
+
+CORS:
+  origins: 
+    - "http://localhost:5173"
+    - "http://127.0.0.1:5173"
+    - "http://192.168.39.119:5173"

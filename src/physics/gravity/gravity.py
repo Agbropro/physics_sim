@@ -136,21 +136,29 @@ def world_points(body: RigidBody) -> list[Point]:
 #  Ground collision
 # ═══════════════════════════════════════════════════════════
 
-def _lowest_contact(body: RigidBody) -> tuple[Point, float]:
+def _lowest_contact(body: RigidBody, cfg: SimConfig) -> tuple[Point, float]:
     """Return the world-space point with the largest y (closest to ground)."""
 
     pts = world_points(body)
     if not pts:
         return (body.x, body.y), body.y
 
-    lowest = max(pts, key=lambda p: p[1])
-    return lowest, lowest[1]
+    max_y = max(p[1] for p in pts)
+    
+    # Collect all points resting on the ground (within contact_tolerance of lowest point)
+    contact_pts = [p for p in pts if max_y - p[1] < cfg.physics.contact_tolerance]
+    
+    # Average them out to simulate a flat surface impact
+    avg_x = sum(p[0] for p in contact_pts) / len(contact_pts)
+    avg_y = sum(p[1] for p in contact_pts) / len(contact_pts)
+    
+    return (avg_x, avg_y), max_y
 
 
 def _resolve_ground_euler(body: RigidBody, cfg: SimConfig) -> None:
     """Handle ground collision for Euler integration."""
 
-    contact, contact_y = _lowest_contact(body)
+    contact, contact_y = _lowest_contact(body, cfg)
     ground_y = cfg.ground_y
 
     if contact_y < ground_y:
@@ -172,6 +180,7 @@ def _resolve_ground_euler(body: RigidBody, cfg: SimConfig) -> None:
     # ──────────────────────────────────────────────────────
     e = cfg.physics.restitution
 
+    vy_impact = abs(body.vy)
     if body.vy > 0:                         # only bounce when falling
         body.vy = -e * body.vy
 
@@ -202,7 +211,7 @@ def _resolve_ground_euler(body: RigidBody, cfg: SimConfig) -> None:
     # reversed by the bounce.
     # ──────────────────────────────────────────────────────
     lever_x = contact[0] - body.x
-    normal_impulse = body.mass * abs(body.vy) * (1.0 + e)
+    normal_impulse = body.mass * vy_impact * (1.0 + e)
 
     if abs(lever_x) > 0.5 and normal_impulse > 0:
         torque = -lever_x * normal_impulse
@@ -220,32 +229,29 @@ def _resolve_ground_euler(body: RigidBody, cfg: SimConfig) -> None:
 def _resolve_ground_verlet(body: RigidBody, cfg: SimConfig) -> None:
     """Handle ground collision for Verlet integration."""
 
-    contact, contact_y = _lowest_contact(body)
+    contact, contact_y = _lowest_contact(body, cfg)
     ground_y = cfg.ground_y
 
     if contact_y < ground_y:
         return
 
     penetration = contact_y - ground_y
+    
+    # Calculate impact velocity before positional correction
+    dt = cfg.physics.dt
+    vy_impact = (body.y - body.prev_y) / dt if dt > 0 else 0.0
+    
     body.y -= penetration
+    # CRITICAL: Adjust prev_y to prevent the positional push from generating fake upward velocity
+    body.prev_y -= penetration
 
     e = cfg.physics.restitution
-    dt = cfg.physics.dt
 
     # ──────────────────────────────────────────────────────
     # Verlet implicit velocity:  v ≈ (x − x_prev) / dt
-    #
-    # To bounce, we *re-encode* the reflected velocity
-    # back into prev position:
-    #
-    #   v_y  = (y − prev_y) / dt
-    #   v_y' = −e × v_y               (reflected + damped)
-    #   prev_y' = y − v_y' × dt       (encode into prev)
     # ──────────────────────────────────────────────────────
-    vy_implicit = (body.y - body.prev_y) / dt if dt > 0 else 0.0
-
-    if vy_implicit > 0:
-        vy_bounced = -e * vy_implicit
+    if vy_impact > 0:
+        vy_bounced = -e * vy_impact
         body.prev_y = body.y - vy_bounced * dt
 
     # Ground friction — damp horizontal implicit velocity on contact
@@ -256,7 +262,7 @@ def _resolve_ground_verlet(body: RigidBody, cfg: SimConfig) -> None:
 
     # Torque from off-centre contact (same physics as Euler)
     lever_x = contact[0] - body.x
-    normal_impulse = body.mass * abs(vy_implicit) * (1.0 + e)
+    normal_impulse = body.mass * abs(vy_impact) * (1.0 + e)
 
     if abs(lever_x) > 0.5 and normal_impulse > 0:
         torque = -lever_x * normal_impulse
@@ -413,4 +419,6 @@ def step(bodies: list[RigidBody], cfg: SimConfig) -> None:
     integrator = step_verlet if cfg.physics.integration is IntegrationMode.VERLET else step_euler
 
     for body in bodies:
+        if body.resting:
+            continue
         integrator(body, cfg)

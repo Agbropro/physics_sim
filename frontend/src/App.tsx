@@ -13,7 +13,7 @@ const CANVAS_H = Number(import.meta.env.VITE_CANVAS_HEIGHT) || 600;
 
 export default function App() {
   const [shapes, setShapes] = useState<CanvasShape[]>([]);
-  const [activeTool, setActiveTool] = useState<ShapeKind | 'edit'>('rectangle');
+  const [activeTool, setActiveTool] = useState<ShapeKind | 'edit' | 'free'>('rectangle');
   const [settings, setSettings] = useState<SimSettings>(DEFAULT_SETTINGS);
   const [comResult, setComResult] = useState<ComResponse | null>(null);
   const [error, setError] = useState<string | null>(null);

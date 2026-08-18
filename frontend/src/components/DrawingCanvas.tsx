@@ -131,6 +131,12 @@ export default function DrawingCanvas({
       return;
     }
 
+    if (activeTool === 'free') {
+      setDrawing(true);
+      setPolyPoints([pt]);
+      return;
+    }
+
     setDrawing(true);
     setStartPt(pt);
     setCurrentPt(pt);
@@ -163,7 +169,20 @@ export default function DrawingCanvas({
     }
 
     if (!drawing) return;
-    setCurrentPt(canvasCoord(e));
+    const pt = canvasCoord(e);
+    setCurrentPt(pt);
+    
+    if (activeTool === 'free') {
+      setPolyPoints((prev) => {
+        if (prev.length === 0) return [pt];
+        const last = prev[prev.length - 1];
+        // Only add point if mouse moved more than 3 pixels (simplification)
+        if (Math.hypot(pt[0] - last[0], pt[1] - last[1]) > 3) {
+          return [...prev, pt];
+        }
+        return prev;
+      });
+    }
   }, [drawing, canvasCoord, activeTool, draggingShapeId, lastMousePt, shapes, onShapesChange]);
 
   const handleMouseUp = useCallback(() => {
@@ -171,6 +190,19 @@ export default function DrawingCanvas({
       setDraggingShapeId(null);
       setDraggingPointIndex(null);
       setLastMousePt(null);
+      return;
+    }
+
+    if (activeTool === 'free') {
+      setDrawing(false);
+      if (polyPoints.length > 2) {
+        const id = `s${++shapeCounter}`;
+        onShapesChange([
+          ...shapes,
+          { id, kind: 'polygon', color: SHAPE_COLOR, points: [...polyPoints] },
+        ]);
+      }
+      setPolyPoints([]);
       return;
     }
 
@@ -198,7 +230,7 @@ export default function DrawingCanvas({
 
     setStartPt(null);
     setCurrentPt(null);
-  }, [drawing, startPt, currentPt, activeTool, shapes, onShapesChange]);
+  }, [drawing, startPt, currentPt, activeTool, shapes, onShapesChange, polyPoints]);
 
   /* ── Finish polygon (right-click or Enter) ── */
   const finishPolygon = useCallback(() => {
@@ -396,24 +428,26 @@ export default function DrawingCanvas({
         }
       }
 
-      // Polygon in-progress preview
+      // Polygon or Free Draw in-progress preview
       if (polyPoints.length > 0) {
         ctx.strokeStyle = POLY_PREVIEW_COLOR;
         ctx.globalAlpha = 0.5;
         ctx.lineWidth = 2;
-        ctx.setLineDash([4, 4]);
+        if (activeTool !== 'free') ctx.setLineDash([4, 4]);
         ctx.beginPath();
         polyPoints.forEach((p, i) => (i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1])));
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Vertex dots
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = SHAPE_COLOR;
-        for (const p of polyPoints) {
-          ctx.beginPath();
-          ctx.arc(p[0], p[1], 4, 0, Math.PI * 2);
-          ctx.fill();
+        // Vertex dots (only for polygon tool)
+        if (activeTool !== 'free') {
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = SHAPE_COLOR;
+          for (const p of polyPoints) {
+            ctx.beginPath();
+            ctx.arc(p[0], p[1], 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
       }
 
