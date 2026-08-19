@@ -2,7 +2,6 @@
 
 from collections.abc import Sequence
 
-import cv2
 import numpy as np
 
 from src.physics.entities import Shape, ShapeType
@@ -24,14 +23,71 @@ def _draw_filled(shape: Shape, mask: np.ndarray, offset: tuple[int, int] = (0, 0
 
     ox, oy = offset
     pts = [(round(x) - ox, round(y) - oy) for x, y in shape.coord]
+    height, width = mask.shape
 
     if shape.kind is ShapeType.RECTANGLE:
-        cv2.rectangle(mask, pts[0], pts[1], 1, thickness=-1)
+        x1, x2 = sorted((pts[0][0], pts[1][0]))
+        y1, y2 = sorted((pts[0][1], pts[1][1]))
+        left, right = max(0, x1), min(width - 1, x2)
+        top, bottom = max(0, y1), min(height - 1, y2)
+        if left <= right and top <= bottom:
+            mask[top:bottom + 1, left:right + 1] = 1
     elif shape.kind is ShapeType.CIRCLE:
         r = round(shape.radius) if shape.radius else 0
-        cv2.circle(mask, pts[0], r, 1, thickness=-1)
+        cx, cy = pts[0]
+        left, right = max(0, cx - r), min(width - 1, cx + r)
+        top, bottom = max(0, cy - r), min(height - 1, cy + r)
+        if left <= right and top <= bottom:
+            ys, xs = np.ogrid[top:bottom + 1, left:right + 1]
+            inside = (xs - cx) ** 2 + (ys - cy) ** 2 <= r ** 2
+            mask[top:bottom + 1, left:right + 1][inside] = 1
     elif shape.kind is ShapeType.POLYGON:
-        cv2.fillPoly(mask, [np.array(pts, dtype=np.int32)], 1)
+        _draw_polygon(mask, pts)
+
+
+def _draw_polygon(mask: np.ndarray, points: list[tuple[int, int]]) -> None:
+    """Fill a polygon using vectorised ray casting and a one-pixel boundary."""
+
+    if len(points) < 3:
+        return
+
+    height, width = mask.shape
+    left = max(0, min(x for x, _ in points))
+    right = min(width - 1, max(x for x, _ in points))
+    top = max(0, min(y for _, y in points))
+    bottom = min(height - 1, max(y for _, y in points))
+    if left > right or top > bottom:
+        return
+
+    ys, xs = np.mgrid[top:bottom + 1, left:right + 1]
+    inside = np.zeros(xs.shape, dtype=bool)
+    boundary = np.zeros(xs.shape, dtype=bool)
+
+    for (x1, y1), (x2, y2) in zip(points, points[1:] + points[:1]):
+        dx, dy = x2 - x1, y2 - y1
+
+        # Odd-even ray casting determines the polygon interior.
+        if dy != 0:
+            crosses = (y1 > ys) != (y2 > ys)
+            edge_x = x1 + (ys - y1) * dx / dy
+            inside ^= crosses & (xs < edge_x)
+
+        # Include pixels within half a pixel of each edge. This preserves a
+        # closed outline and closely matches filled raster drawing semantics.
+        length_sq = dx * dx + dy * dy
+        if length_sq == 0:
+            boundary |= (xs == x1) & (ys == y1)
+            continue
+        projection = (xs - x1) * dx + (ys - y1) * dy
+        cross_product = (xs - x1) * dy - (ys - y1) * dx
+        boundary |= (
+            (projection >= 0)
+            & (projection <= length_sq)
+            & (cross_product * cross_product <= 0.25 * length_sq)
+        )
+
+    region = mask[top:bottom + 1, left:right + 1]
+    region[inside | boundary] = 1
 
 
 def _shape_bbox(shape: Shape, w: int, h: int) -> BBox | None:

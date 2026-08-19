@@ -55,10 +55,10 @@ an available Vercel runtime.
 
 ### Python dependencies
 
-Vercel installs backend dependencies from the root `requirements.txt`.
-`opencv-python-headless` is used instead of the desktop OpenCV package because
-the server does not need GUI support and the headless wheel has fewer cloud
-runtime dependencies.
+Vercel installs backend dependencies from the root `requirements.txt`. Shape
+rasterization is implemented with NumPy so the serverless function does not
+need the large OpenCV binary package. OpenCV can make the expanded function
+bundle exceed Vercel's function-size limit.
 
 ### Frontend API URL
 
@@ -199,6 +199,12 @@ npm --prefix frontend run build
 ```
 
 Fix TypeScript or Vite errors before pushing again.
+
+### Python function exceeds the maximum bundle size
+
+Do not add `opencv-python` or `opencv-python-headless` back to
+`requirements.txt`. This project only needs NumPy for shape rasterization;
+OpenCV makes the deployed Python function too large for the standard limit.
 
 ### Frontend loads but API returns 404
 
