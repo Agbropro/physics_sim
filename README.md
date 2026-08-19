@@ -74,3 +74,23 @@ cd frontend
 npm install
 npm run dev
 ```
+
+## Deploying to Vercel
+
+This repository deploys as one Vercel project: the Vite frontend is served at
+the site root and the FastAPI application is served from `/api`.
+
+1. Push the repository to GitHub, GitLab, or Bitbucket and import it into
+   Vercel.
+2. Keep the Vercel **Root Directory** set to the repository root (`.`). The
+   checked-in `vercel.json` supplies the build command and output directory.
+3. Do not set `VITE_API_URL` in Vercel. Leaving it unset makes the frontend use
+   the same domain for `/api` requests.
+4. Deploy, then verify `https://YOUR_DOMAIN/api/health` returns
+   `{"status":"ok"}`.
+5. In **Project Settings → Domains**, assign the custom domain to the
+   Production environment if it is not already assigned.
+
+Optional `VITE_*` appearance and canvas settings from `frontend/.env.example`
+can be added under **Project Settings → Environment Variables**. After changing
+a build-time `VITE_*` variable, redeploy the project.

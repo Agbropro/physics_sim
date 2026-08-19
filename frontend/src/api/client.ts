@@ -27,6 +27,7 @@ function shapeToApi(s: CanvasShape): ShapeIn {
         radius: s.radius!,
       };
     case 'polygon':
+    case 'free':
       return {
         id: s.id,
         kind: 'polygon',
