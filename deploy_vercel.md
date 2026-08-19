@@ -80,6 +80,7 @@ output while keeping the Python API as a Vercel Function:
 ```json
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
   "buildCommand": "npm --prefix frontend ci && npm --prefix frontend run build",
   "outputDirectory": "frontend/dist",
   "functions": {
@@ -105,7 +106,7 @@ output while keeping the Python API as a Vercel Function:
 3. Use these project settings:
 
    ```text
-   Application Preset: FastAPI
+   Application Preset: Vite
    Root Directory: ./
    Environment Variables: none required
    ```
@@ -205,6 +206,8 @@ Check all of the following:
 
 - `api/index.py` exists in the deployed commit.
 - The Vercel Root Directory is the repository root, not `frontend`.
+- The main Application Preset is Vite, not FastAPI. FastAPI is detected
+  separately from `api/index.py` for `/api/*` requests.
 - Backend routes include the `/api` prefix.
 - `VITE_API_URL` is unset for the combined deployment.
 
