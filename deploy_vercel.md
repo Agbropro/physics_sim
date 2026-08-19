@@ -16,7 +16,10 @@ The following files must be committed and pushed:
 ├── .python-version
 ├── api/
 │   ├── __init__.py
-│   └── index.py
+│   ├── com.py
+│   ├── health.py
+│   ├── index.py
+│   └── simulate.py
 ├── frontend/
 │   ├── package-lock.json
 │   ├── package.json
@@ -40,6 +43,11 @@ __all__ = ["app"]
 
 All backend routes in `src/delivery/api.py` retain their `/api` prefix, for
 example `/api/health`, `/api/com`, and `/api/simulate`.
+
+Because Vite is the primary framework, endpoint entry files `api/health.py`,
+`api/com.py`, and `api/simulate.py` export the same application. This gives
+Vercel a concrete Python Function for each public API URL instead of relying on
+the FastAPI preset's catch-all routing.
 
 ### Python version
 
@@ -84,7 +92,7 @@ output while keeping the Python API as a Vercel Function:
   "buildCommand": "npm --prefix frontend ci && npm --prefix frontend run build",
   "outputDirectory": "frontend/dist",
   "functions": {
-    "api/index.py": {
+    "api/**/*.py": {
       "excludeFiles": "{frontend/**,docs/**,**/__pycache__/**}"
     }
   }
@@ -210,7 +218,8 @@ OpenCV makes the deployed Python function too large for the standard limit.
 
 Check all of the following:
 
-- `api/index.py` exists in the deployed commit.
+- `api/index.py`, `api/health.py`, `api/com.py`, and `api/simulate.py` exist in
+  the deployed commit.
 - The Vercel Root Directory is the repository root, not `frontend`.
 - The main Application Preset is Vite, not FastAPI. FastAPI is detected
   separately from `api/index.py` for `/api/*` requests.
